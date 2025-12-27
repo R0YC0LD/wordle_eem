@@ -113,13 +113,25 @@
     <input type="text" id="hidden-input" autocomplete="off">
 
     <script>
-        // --- AYARLAR VE KELİME HAVUZU (Dosya Okuma Yerine) ---
-        // C kodundaki 'seviyeX.txt' dosyalarının yerini bu nesne alıyor.
+        // --- AYARLAR VE KELİME HAVUZU ---
+        // İstediğiniz kelimeler buraya eklendi.
         const GAME_DATA = {
-            3: { category: "HAYVAN", words: ["AYI", "KUS", "FIL", "AT", "KOC", "ARI"] },
-            4: { category: "ULKE", words: ["IRAK", "IRAN", "GINE", "MALI", "PERU"] },
-            5: { category: "SEHIR (TR)", words: ["IZMIR", "SIVAS", "BURSA", "ADANA", "HATAY"] },
-            6: { category: "BITKI", words: ["KAKTUS", "ZAMBAK", "MIMOZA", "FESLEGE"] }
+            3: { 
+                category: "HAYVAN", 
+                words: ["KUS", "AYI", "ARI", "FIL", "FOK", "KAZ", "BIT", "KOC"] 
+            },
+            4: { 
+                category: "ULKE", 
+                words: ["IRAN", "IRAK", "KUBA", "PERU", "SILI", "LAOS", "MALI", "FIJI", "TOGO", "GANA", "GINE"] 
+            },
+            5: { 
+                category: "SEHIR (TR)", 
+                words: ["MUGLA", "IZMIR", "SINOP", "CORUM", "SIIRT", "SIVAS", "AYDIN", "BURSA", "DUZCE", "KILIS", "IGDIR", "TOKAT", "KONYA", "NIGDE", "ADANA", "HATAY"] 
+            },
+            6: { 
+                category: "BITKI", 
+                words: ["AKASYA", "ANASON", "ARIOTU", "CAKSIR", "KUSOTU", "GURGEN", "CAVDAR", "HUNNAP", "ANANAS", "KAMKAT", "KAYISI", "KARPUZ", "TURUNC", "MUSKAT", "ALABAS", "PANCAR", "PIRASA", "SALGAM", "HASHAS", "KISNIS", "KIMYON", "LAHANA", "MURVER", "MAHLEP", "REZENE", "SUTOTU", "SARIOT", "SIMSIR", "CIGDEM", "DISOTU", "KAKTUS", "KIZOTU", "LEYLAK", "NERGIS", "ORKIDE", "REYHAN", "ZAKKUM", "ZAMBAK", "CELTIK", "FISTIK", "FINDIK", "HARDAL", "PIRINC", "SAFRAN", "ZEYTIN", "KAKULE", "JOJOBA", "LILYUM"] 
+            }
         };
 
         // --- GLOBAL DEĞİŞKENLER ---
@@ -197,7 +209,6 @@
             let key = e.key;
 
             // Türkçe karakter desteği ile Büyük Harfe çevir
-            // C kodundaki 'buyukkucukayar' fonksiyonunun modern JS hali
             if (key.length === 1 && key.match(/[a-zA-ZğüşıöçĞÜŞİÖÇ]/)) {
                 if (currentGuess.length < currentTour) {
                     addLetter(key.toLocaleUpperCase('tr-TR'));
@@ -240,7 +251,7 @@
                 return;
             }
 
-            // C kodundaki checkRow fonksiyonunun JS karşılığı
+            // Tahmin kontrolü
             const guessResult = checkGuess(currentGuess, targetWord);
             colorizeRow(guessResult);
 
@@ -257,15 +268,13 @@
                 if (currentAttempt >= maxAttempts) {
                     showMessage(`Kaybettin! Doğru Kelime: ${targetWord}`);
                     gameOver = true;
-                    // Kaybedince başa dönmemesi için mantığı burada değiştirebilirsiniz
-                    // Şimdilik C kodundaki gibi bitiriyor.
                     document.getElementById("restart-btn").style.display = "block";
                     document.getElementById("restart-btn").innerText = "Tekrar Dene";
                 }
             }
         }
 
-        // Renk Algoritması (C kodundaki frekans dizisi mantığı)
+        // Renk Algoritması
         function checkGuess(guess, target) {
             let result = new Array(guess.length).fill(0); // 0: Gri, 1: Yeşil, 2: Sarı
             let targetFreq = {};
@@ -299,7 +308,6 @@
             let rowStart = currentAttempt * currentTour;
             for (let i = 0; i < currentTour; i++) {
                 let box = document.getElementById(`box-${rowStart + i}`);
-                // Animasyon eklenebilir, şimdilik direkt boyuyoruz
                 if (resultArray[i] === 1) box.classList.add("correct");
                 else if (resultArray[i] === 2) box.classList.add("present");
                 else box.classList.add("absent");
@@ -311,7 +319,6 @@
             el.innerText = msg;
             el.style.display = "block";
             
-            // Eğer oyun bitmediyse mesaj kaybolsun, bittiyse kalsın
             if (!gameOver) {
                 setTimeout(() => {
                     el.style.display = "none";
@@ -329,7 +336,6 @@
                 startGame(currentTour);
             }
         }
-
     </script>
 </body>
 </html>
