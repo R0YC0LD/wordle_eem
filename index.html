@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Türkçe Wordle Oyunu</title>
     <style>
         :root {
@@ -13,106 +13,151 @@
             --light: #ffffff;
             --border: #3a3a3c;
             --key-bg: #818384;
+            /* Ekranın güvenli alanlarını hesapla (iPhone X ve üzeri için) */
+            --safe-bottom: env(safe-area-inset-bottom, 10px);
+        }
+
+        * {
+            box-sizing: border-box; /* padding hesaplamalarını sabitle */
         }
 
         body {
             background-color: var(--dark);
             color: var(--light);
             font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            
+            /* EKRAN SABİTLEME SİHRİ */
+            position: fixed; /* Ekranı çivile */
+            width: 100%;
+            height: 100%;
+            height: 100dvh; /* Adres çubuğu sorununu çözer */
+            overflow: hidden; /* Kaydırmayı engelle */
+            overscroll-behavior: none; /* Lastik etkisini kapat */
+            touch-action: none; /* Tarayıcı jestlerini kapat */
+            
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between; /* Alanı dikeyde yay */
-            margin: 0;
-            height: 100vh; /* Tam ekran yüksekliği */
-            overflow: hidden; /* Kaydırmayı engelle */
-            touch-action: manipulation; /* Çift tıklama zoomunu engelle */
+        }
+
+        /* HEADER ALANI */
+        header {
+            width: 100%;
+            border-bottom: 1px solid var(--border);
+            padding: 10px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0; /* Küçülmesine izin verme */
         }
 
         h1 { 
             font-size: 1.5rem;
-            margin: 10px 0 5px 0; 
-            border-bottom: 1px solid var(--border); 
-            padding-bottom: 5px; 
+            margin: 0;
+            letter-spacing: 2px;
         }
         
         .info-bar { 
-            text-align: center; 
+            display: flex;
+            gap: 15px;
             font-size: 0.8rem;
+            margin-top: 5px;
+            color: #aaa;
         }
-        .info-bar p { margin: 2px; color: #aaa; }
+
+        /* OYUN ALANI (Esnek) */
+        #game-container {
+            flex-grow: 1; /* Kalan tüm boşluğu kapla */
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            padding: 10px;
+        }
 
         #game-board {
             display: grid;
             grid-gap: 5px;
-            margin: 10px 0;
-            flex-grow: 1; /* Boş alanı kapla */
-            align-content: center; /* Dikeyde ortala */
-            overflow-y: auto;
+            /* Maksimum genişlik ve yükseklik sınırları */
+            max-width: 350px; 
+            max-height: 100%;
+            aspect-ratio: 5 / 6; /* Wordle tahtasının yaklaşık oranı */
         }
 
         .tile {
-            /* Mobilde ekran boyutuna göre esnek kareler */
-            width: 13vw; 
-            height: 13vw;
-            max-width: 50px;
-            max-height: 50px;
+            width: 100%; /* Grid hücresini doldur */
+            aspect-ratio: 1 / 1; /* Kare kalmasını sağla */
             border: 2px solid var(--border);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: bold;
             text-transform: uppercase;
+            user-select: none; /* Yazı seçimini engelle */
         }
 
         /* Renk Sınıfları */
         .correct { background-color: var(--green); border-color: var(--green); }
         .present { background-color: var(--yellow); border-color: var(--yellow); }
         .absent { background-color: var(--grey); border-color: var(--grey); }
-        .filled { border-color: #565758; }
+        .filled { border-color: #888; animation: pop 0.1s; }
+
+        @keyframes pop { 50% { transform: scale(1.1); } }
 
         /* Mesaj Alanı */
         #message-area {
-            position: fixed;
-            top: 10%;
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
             background-color: rgba(255, 255, 255, 0.95);
             color: black;
             padding: 15px 25px;
             border-radius: 5px;
             font-weight: bold;
             display: none;
-            z-index: 20;
+            z-index: 50;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            font-size: 1.1rem;
+            font-size: 1rem;
+            text-align: center;
+            white-space: nowrap;
         }
 
         button#restart-btn {
-            padding: 12px 24px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
             background-color: var(--green);
             color: white;
             border: none;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 1.2rem;
             font-weight: bold;
             display: none;
-            margin-bottom: 10px;
-            border-radius: 4px;
+            border-radius: 8px;
+            z-index: 60;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
         }
 
-        /* --- SANAL KLAVYE STİLLERİ --- */
+        /* --- SANAL KLAVYE ALANI --- */
         #keyboard-cont {
             width: 100%;
             max-width: 500px;
-            margin-bottom: 10px;
-            padding: 0 3px;
-            box-sizing: border-box;
+            padding: 5px 3px var(--safe-bottom) 3px; /* Alttan güvenli boşluk */
+            flex-shrink: 0; /* Küçülmesine izin verme */
+            background-color: var(--dark);
         }
 
         .keyboard-row {
             display: flex;
             width: 100%;
-            margin: 0 auto 8px;
+            margin: 0 auto 6px; /* Satır boşluğu */
             touch-action: manipulation;
             justify-content: center;
         }
@@ -121,51 +166,60 @@
             font-family: inherit;
             font-weight: bold;
             border: 0;
-            padding: 0;
-            margin: 0 2px; /* Tuşlar arası boşluk */
-            height: 55px; /* Tuş yüksekliği */
+            margin: 0 2px;
+            height: 52px; /* Tuş yüksekliği */
             border-radius: 4px;
             cursor: pointer;
             user-select: none;
             background-color: var(--key-bg);
             color: var(--light);
-            flex: 1; /* Tuşlar eşit dağılsın */
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
             text-transform: uppercase;
-            font-size: 0.85rem; /* Harf boyutu */
+            font-size: 0.9rem;
+            -webkit-tap-highlight-color: transparent; /* Tıklama efektini kaldır */
         }
 
-        /* Enter ve Sil tuşlarını biraz daha geniş yap */
         .keyboard-button.wide-button {
             flex: 1.5;
             font-size: 0.75rem;
         }
         
-        /* Renklendirilmiş Klavye Tuşları */
-        .key-correct { background-color: var(--green) !important; transition: 0.3s; }
-        .key-present { background-color: var(--yellow) !important; transition: 0.3s; }
-        .key-absent { background-color: #3a3a3c !important; transition: 0.3s; }
+        .key-correct { background-color: var(--green) !important; color: white; }
+        .key-present { background-color: var(--yellow) !important; color: white; }
+        .key-absent { background-color: #3a3a3c !important; }
+
+        /* Küçük ekranlar için medya sorgusu */
+        @media (max-height: 650px) {
+            .tile { font-size: 1.4rem; }
+            .keyboard-button { height: 45px; font-size: 0.8rem; }
+            h1 { font-size: 1.2rem; }
+            #game-board { gap: 3px; }
+        }
 
     </style>
 </head>
 <body>
 
-    <h1>KELİME BULMACA</h1>
-    
-    <div class="info-bar">
-        <p id="level-info">LEVEL: 1 (3 HARFLİ)</p>
-        <p id="category-info">KATEGORİ: HAYVAN</p>
-        <p id="stamina-info">HAK: 4</p>
-    </div>
+    <header>
+        <h1>KELİME BULMACA</h1>
+        <div class="info-bar">
+            <span id="level-info">LVL: 1 (3 HARF)</span>
+            <span>|</span>
+            <span id="category-info">KAT: HAYVAN</span>
+            <span>|</span>
+            <span id="stamina-info">HAK: 4</span>
+        </div>
+    </header>
 
     <div id="message-area"></div>
+    <button id="restart-btn" onclick="nextLevelOrRestart()">Sonraki Seviye</button>
 
-    <div id="game-board">
-        </div>
-
-    <button id="restart-btn" onclick="nextLevelOrRestart()">Sonraki Seviye / Tekrar Oyna</button>
+    <div id="game-container">
+        <div id="game-board"></div>
+    </div>
 
     <div id="keyboard-cont"></div>
 
@@ -201,10 +255,10 @@
 
         // --- BAŞLATMA ---
         window.onload = function() {
-            initKeyboard(); // Klavyeyi oluştur
+            initKeyboard(); 
             startGame(currentTour);
             
-            // Fiziksel klavye desteği (PC için hala çalışsın)
+            // Fiziksel klavye desteği
             document.addEventListener("keydown", (e) => {
                 if(gameOver) return;
                 let key = e.key;
@@ -214,7 +268,6 @@
             });
         };
 
-        // --- SANAL KLAVYE OLUŞTURMA ---
         function initKeyboard() {
             const keys = [
                 "E R T Y U I O P Ğ Ü",
@@ -223,7 +276,7 @@
             ];
             
             const keyboardCont = document.getElementById("keyboard-cont");
-            keyboardCont.innerHTML = ""; // Temizle
+            keyboardCont.innerHTML = ""; 
 
             keys.forEach(rowString => {
                 let rowDiv = document.createElement("div");
@@ -234,15 +287,21 @@
                 chars.forEach(char => {
                     let btn = document.createElement("button");
                     btn.classList.add("keyboard-button");
-                    btn.innerText = char;
-                    btn.setAttribute("data-key", char); // Renk değişimi için referans
-
-                    if(char === "ENTER" || char === "SIL") {
+                    
+                    if(char === "SIL") {
+                        btn.innerHTML = "&#9003;"; // Silme ikonu
                         btn.classList.add("wide-button");
+                    } else if (char === "ENTER") {
+                        btn.innerText = "ENTER";
+                        btn.classList.add("wide-button");
+                    } else {
+                        btn.innerText = char;
                     }
 
-                    // Tıklama olayı
-                    btn.addEventListener("click", () => {
+                    btn.setAttribute("data-key", char); 
+
+                    btn.addEventListener("click", (e) => {
+                        e.preventDefault(); // Butonun focus almasını engelle
                         handleVirtualKey(char);
                     });
 
@@ -253,7 +312,6 @@
             });
         }
 
-        // --- TUŞ İŞLEMLERİ ---
         function handleVirtualKey(key) {
             if (gameOver) return;
 
@@ -265,7 +323,6 @@
                     updateActiveRow();
                 }
             } else {
-                // Harf ekleme
                 if (currentGuess.length < currentTour) {
                     currentGuess += key;
                     updateActiveRow();
@@ -275,38 +332,33 @@
 
         function startGame(tour) {
             if (tour > 6) {
-                showMessage("TEBRİKLER! TÜM SEVİYELERİ BİTİRDİNİZ.", 5000);
+                showMessage("TEBRİKLER! OYUN BİTTİ.", 5000);
                 document.getElementById("restart-btn").style.display = "none";
                 return;
             }
 
-            // Değişkenleri sıfırla
             currentTour = tour;
             currentAttempt = 0;
             currentGuess = "";
             gameOver = false;
             maxAttempts = tour + 1;
             
-            // Kelime seç
             const words = GAME_DATA[tour].words;
             targetWord = words[Math.floor(Math.random() * words.length)];
-            console.log("Hedef Kelime (Hile):", targetWord);
+            console.log("Hedef:", targetWord);
 
-            // Arayüzü güncelle
-            document.getElementById("level-info").innerText = `LEVEL: ${tour - 2} (${tour} HARFLİ)`;
-            document.getElementById("category-info").innerText = `KATEGORİ: ${GAME_DATA[tour].category}`;
+            document.getElementById("level-info").innerText = `LVL: ${tour - 2}`;
+            document.getElementById("category-info").innerText = `${GAME_DATA[tour].category}`;
             document.getElementById("stamina-info").innerText = `HAK: ${maxAttempts}`;
             document.getElementById("restart-btn").style.display = "none";
 
             createBoard(tour, maxAttempts);
-            resetKeyboardColors(); // Yeni oyunda klavye renklerini sıfırla
+            resetKeyboardColors(); 
         }
 
         function createBoard(width, height) {
-            gameBoard.style.gridTemplateColumns = `repeat(${width}, 14vw)`; // Mobilde esnek genişlik
-            if (window.innerWidth > 500) { // PC ekranında sabit kalsın
-                gameBoard.style.gridTemplateColumns = `repeat(${width}, 50px)`;
-            }
+            // CSS Grid yapısını güncelle: Sütun sayısı kadar eşit parça
+            gameBoard.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
             
             gameBoard.innerHTML = "";
 
@@ -334,43 +386,47 @@
 
         function submitGuess() {
             if (currentGuess.length !== currentTour) {
-                showMessage("Yetersiz harf sayısı!");
+                showMessage("Eksik harf!");
                 return;
             }
 
             const guessResult = checkGuess(currentGuess, targetWord);
             colorizeRow(guessResult);
-            updateKeyboardColors(currentGuess, guessResult); // Klavye renklerini güncelle
+            updateKeyboardColors(currentGuess, guessResult); 
 
             if (currentGuess === targetWord) {
-                showMessage(`Bravo.. ${currentAttempt + 1} denemede bildiniz!`);
                 gameOver = true;
-                document.getElementById("restart-btn").style.display = "block";
-                document.getElementById("restart-btn").innerText = "Sonraki Seviye";
+                showMessage(`Tebrikler!`, 2000);
+                setTimeout(() => {
+                    let btn = document.getElementById("restart-btn");
+                    btn.innerText = "Sonraki Seviye";
+                    btn.style.display = "block";
+                }, 1000);
             } else {
                 currentAttempt++;
                 currentGuess = "";
-                document.getElementById("stamina-info").innerText = `KALAN HAK: ${maxAttempts - currentAttempt}`;
+                document.getElementById("stamina-info").innerText = `HAK: ${maxAttempts - currentAttempt}`;
 
                 if (currentAttempt >= maxAttempts) {
-                    showMessage(`Kaybettin! Doğru Kelime: ${targetWord}`);
                     gameOver = true;
-                    document.getElementById("restart-btn").style.display = "block";
-                    document.getElementById("restart-btn").innerText = "Tekrar Dene";
+                    showMessage(`Cevap: ${targetWord}`, 3000);
+                    setTimeout(() => {
+                        let btn = document.getElementById("restart-btn");
+                        btn.innerText = "Tekrar Dene";
+                        btn.style.display = "block";
+                    }, 1500);
                 }
             }
         }
 
-        // --- RENK ALGORİTMASI ---
         function checkGuess(guess, target) {
-            let result = new Array(guess.length).fill(0); // 0: Gri, 1: Yeşil, 2: Sarı
+            let result = new Array(guess.length).fill(0); 
             let targetFreq = {};
             
             for (let char of target) {
                 targetFreq[char] = (targetFreq[char] || 0) + 1;
             }
 
-            // 1. Aşama: Yeşiller
             for (let i = 0; i < guess.length; i++) {
                 if (guess[i] === target[i]) {
                     result[i] = 1; 
@@ -378,7 +434,6 @@
                 }
             }
 
-            // 2. Aşama: Sarılar
             for (let i = 0; i < guess.length; i++) {
                 if (result[i] === 0) { 
                     if (targetFreq[guess[i]] > 0) {
@@ -394,36 +449,32 @@
             let rowStart = currentAttempt * currentTour;
             for (let i = 0; i < currentTour; i++) {
                 let box = document.getElementById(`box-${rowStart + i}`);
-                
-                // Animasyon efekti için kısa gecikme eklenebilir
-                if (resultArray[i] === 1) box.classList.add("correct");
-                else if (resultArray[i] === 2) box.classList.add("present");
-                else box.classList.add("absent");
+                setTimeout(() => {
+                    if (resultArray[i] === 1) box.classList.add("correct");
+                    else if (resultArray[i] === 2) box.classList.add("present");
+                    else box.classList.add("absent");
+                }, i * 100); // Küçük bir animasyon gecikmesi
             }
         }
 
-        // --- KLAVYE RENK GÜNCELLEME ---
         function updateKeyboardColors(guess, result) {
             for (let i = 0; i < guess.length; i++) {
                 let char = guess[i];
-                let colorStatus = result[i]; // 1: Yeşil, 2: Sarı, 0: Gri
+                let colorStatus = result[i]; 
                 
                 let keyBtn = document.querySelector(`button[data-key='${char}']`);
                 if (!keyBtn) continue;
 
-                // Yeşil varsa diğerlerini ezmeli
-                if (colorStatus === 1) {
-                    keyBtn.classList.remove("key-present");
-                    keyBtn.classList.add("key-correct");
-                } 
-                // Sarı varsa ve henüz Yeşil değilse
-                else if (colorStatus === 2 && !keyBtn.classList.contains("key-correct")) {
-                    keyBtn.classList.add("key-present");
-                } 
-                // Gri ise ve ne Yeşil ne Sarıysa
-                else if (colorStatus === 0 && !keyBtn.classList.contains("key-correct") && !keyBtn.classList.contains("key-present")) {
-                    keyBtn.classList.add("key-absent");
-                }
+                setTimeout(() => {
+                    if (colorStatus === 1) {
+                        keyBtn.classList.remove("key-present");
+                        keyBtn.classList.add("key-correct");
+                    } else if (colorStatus === 2 && !keyBtn.classList.contains("key-correct")) {
+                        keyBtn.classList.add("key-present");
+                    } else if (colorStatus === 0 && !keyBtn.classList.contains("key-correct") && !keyBtn.classList.contains("key-present")) {
+                        keyBtn.classList.add("key-absent");
+                    }
+                }, guess.length * 100);
             }
         }
 
@@ -434,16 +485,14 @@
             });
         }
 
-        function showMessage(msg, duration = 3000) {
+        function showMessage(msg, duration = 2000) {
             const el = document.getElementById("message-area");
             el.innerText = msg;
             el.style.display = "block";
             
-            if (!gameOver) {
-                setTimeout(() => {
-                    el.style.display = "none";
-                }, duration);
-            }
+            setTimeout(() => {
+                el.style.display = "none";
+            }, duration);
         }
 
         function nextLevelOrRestart() {
